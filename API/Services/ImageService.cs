@@ -129,35 +129,11 @@ public class ImageService : IImageService
     /// <returns></returns>
     public static Enums.Size GetSizeForDimensions(Image image, int targetWidth, int targetHeight)
     {
-        try
-        {
-            if (WillScaleWell(image, targetWidth, targetHeight) || IsLikelyWideImage(image.Width, image.Height))
-            {
-                return Enums.Size.Force;
-            }
-        }
-        catch (Exception)
-        {
-            /* Swallow */
-        }
-
         return Enums.Size.Both;
     }
 
     public static Enums.Interesting? GetCropForDimensions(Image image, int targetWidth, int targetHeight)
     {
-        try
-        {
-            if (WillScaleWell(image, targetWidth, targetHeight) || IsLikelyWideImage(image.Width, image.Height))
-            {
-                return null;
-            }
-        } catch (Exception)
-        {
-            /* Swallow */
-            return null;
-        }
-
         return Enums.Interesting.Attention;
     }
 
@@ -588,7 +564,7 @@ public class ImageService : IImageService
         // TODO: This code has no concept of cropping nor Thumbnail Size
         try
         {
-            using var thumbnail = Image.ThumbnailBuffer(Convert.FromBase64String(encodedImage), thumbnailWidth);
+            using var thumbnail = Image.ThumbnailBuffer(Convert.FromBase64String(encodedImage), thumbnailWidth, size: Enums.Size.Both, crop: Enums.Interesting.Attention);
             fileName += encodeFormat.GetExtension();
             thumbnail.WriteToFile(_directoryService.FileSystem.Path.Join(_directoryService.CoverImageDirectory, fileName));
             return fileName;
