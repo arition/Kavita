@@ -34,4 +34,10 @@ public enum LibraryType
     /// </summary>
     [Description("Comic (Comic Vine)")]
     ComicVine = 5,
+    /// <summary>
+    /// Use file name or folder name as series name
+    /// </summary>
+    [Description("Flat")]
+    Flat = 6,
+
 }
