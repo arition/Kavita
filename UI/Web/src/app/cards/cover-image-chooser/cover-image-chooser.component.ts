@@ -82,7 +82,7 @@ export class CoverImageChooserComponent implements OnInit {
   appliedIndex: number = 0;
   form!: FormGroup;
   files: NgxFileDropEntry[] = [];
-  acceptableExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif'].join(',');
+  acceptableExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif', '.bmp', '.tif'].join(',');
   mode: 'file' | 'url' | 'all' = 'all';
 
   constructor(@Inject(DOCUMENT) private document: Document) { }
