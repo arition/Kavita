@@ -4,6 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using System.Xml.Serialization;
+using API.Data.Metadata;
 using API.DTOs;
 using API.Entities.Enums;
 using API.Entities.Interfaces;
@@ -63,6 +66,7 @@ public interface IImageService
     Task<string> ConvertToEncodingFormat(string filePath, string outputPath, EncodeFormat encodeFormat);
     Task<bool> IsImage(string filePath);
     void UpdateColorScape(IHasCoverImage entity);
+    ComicInfo? GetComicInfo(string imagePath);
 }
 
 public class ImageService : IImageService
@@ -78,6 +82,7 @@ public class ImageService : IImageService
 
     private const double WhiteThreshold = 0.95; // Colors with lightness above this are considered too close to white
     private const double BlackThreshold = 0.25; // Colors with lightness below this are considered too close to black
+    private const string ComicInfoFilename = "ComicInfo.xml";
 
 
     /// <summary>
@@ -753,5 +758,46 @@ public class ImageService : IImageService
         return Color.FromArgb(r, g, b);
     }
 
+    /// <summary>
+    /// This can be null if nothing is found or any errors occur during access
+    /// </summary>
+    /// <param name="imagePath"></param>
+    /// <returns></returns>
+    public ComicInfo? GetComicInfo(string imagePath)
+    {
+        var file = _directoryService.FileSystem.FileInfo.New(imagePath);
+        var comicInfoPath = _directoryService.FileSystem.FileInfo.New(
+            _directoryService.FileSystem.Path.Join(
+                file.DirectoryName,
+                ComicInfoFilename
+            ));
+        if (comicInfoPath.Exists)
+        {
+            using var stream = comicInfoPath.OpenRead();
+            return Deserialize(stream);
+        }
 
+        return null;
+    }
+
+    /// <summary>
+    /// Strips out empty tags before deserializing
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <returns></returns>
+    private static ComicInfo? Deserialize(Stream stream)
+    {
+        var comicInfoXml = XDocument.Load(stream);
+        comicInfoXml.Descendants()
+            .Where(e => e.IsEmpty || string.IsNullOrWhiteSpace(e.Value))
+            .Remove();
+
+        var serializer = new XmlSerializer(typeof(ComicInfo));
+        using var reader = comicInfoXml.Root?.CreateReader();
+        if (reader == null) return null;
+
+        var info = (ComicInfo?)serializer.Deserialize(reader);
+        ComicInfo.CleanComicInfo(info);
+        return info;
+    }
 }

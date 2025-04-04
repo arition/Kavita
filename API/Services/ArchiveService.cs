@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -115,17 +115,17 @@ public class ArchiveService : IArchiveService
             switch (libraryHandler)
             {
                 case ArchiveLibrary.Default:
-                {
-                    using var archive = ZipFile.OpenRead(archivePath);
-                    return archive.Entries.Count(e => !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(e.FullName) && Tasks.Scanner.Parser.Parser.IsImage(e.FullName));
-                }
+                    {
+                        using var archive = ZipFile.OpenRead(archivePath);
+                        return archive.Entries.Count(e => !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(e.FullName) && Tasks.Scanner.Parser.Parser.IsImage(e.FullName));
+                    }
                 case ArchiveLibrary.SharpCompress:
-                {
-                    using var archive = ArchiveFactory.Open(archivePath);
-                    return archive.Entries.Count(entry => !entry.IsDirectory &&
-                                                          !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(Path.GetDirectoryName(entry.Key) ?? string.Empty)
-                                                          && Tasks.Scanner.Parser.Parser.IsImage(entry.Key));
-                }
+                    {
+                        using var archive = ArchiveFactory.Open(archivePath);
+                        return archive.Entries.Count(entry => !entry.IsDirectory &&
+                                                              !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(Path.GetDirectoryName(entry.Key) ?? string.Empty)
+                                                              && Tasks.Scanner.Parser.Parser.IsImage(entry.Key));
+                    }
                 case ArchiveLibrary.NotSupported:
                     _logger.LogWarning("[GetNumberOfPagesFromArchive] This archive cannot be read: {ArchivePath}. Defaulting to 0 pages", archivePath);
                     _mediaErrorService.ReportMediaIssue(archivePath, MediaErrorProducer.ArchiveService, "File format not supported", string.Empty);
@@ -228,26 +228,26 @@ public class ArchiveService : IArchiveService
             switch (libraryHandler)
             {
                 case ArchiveLibrary.Default:
-                {
-                    using var archive = ZipFile.OpenRead(archivePath);
+                    {
+                        using var archive = ZipFile.OpenRead(archivePath);
 
-                    var entryName = FindCoverImageFilename(archivePath, archive.Entries.Select(e => e.FullName));
-                    var entry = archive.Entries.Single(e => e.FullName == entryName);
+                        var entryName = FindCoverImageFilename(archivePath, archive.Entries.Select(e => e.FullName));
+                        var entry = archive.Entries.Single(e => e.FullName == entryName);
 
-                    using var stream = entry.Open();
-                    return _imageService.WriteCoverThumbnail(stream, fileName, outputDirectory, format, size);
-                }
+                        using var stream = entry.Open();
+                        return _imageService.WriteCoverThumbnail(stream, fileName, outputDirectory, format, size);
+                    }
                 case ArchiveLibrary.SharpCompress:
-                {
-                    using var archive = ArchiveFactory.Open(archivePath);
-                    var entryNames = archive.Entries.Where(archiveEntry => !archiveEntry.IsDirectory).Select(e => e.Key).ToList();
+                    {
+                        using var archive = ArchiveFactory.Open(archivePath);
+                        var entryNames = archive.Entries.Where(archiveEntry => !archiveEntry.IsDirectory).Select(e => e.Key).ToList();
 
-                    var entryName = FindCoverImageFilename(archivePath, entryNames);
-                    var entry = archive.Entries.Single(e => e.Key == entryName);
+                        var entryName = FindCoverImageFilename(archivePath, entryNames);
+                        var entry = archive.Entries.Single(e => e.Key == entryName);
 
-                    using var stream = entry.OpenEntryStream();
-                    return _imageService.WriteCoverThumbnail(stream, fileName, outputDirectory, format, size);
-                }
+                        using var stream = entry.OpenEntryStream();
+                        return _imageService.WriteCoverThumbnail(stream, fileName, outputDirectory, format, size);
+                    }
                 case ArchiveLibrary.NotSupported:
                     _logger.LogWarning("[GetCoverImage] This archive cannot be read: {ArchivePath}. Defaulting to no cover image", archivePath);
                     return string.Empty;
@@ -441,35 +441,35 @@ public class ArchiveService : IArchiveService
             switch (libraryHandler)
             {
                 case ArchiveLibrary.Default:
-                {
-                    using var archive = ZipFile.OpenRead(archivePath);
-
-                    var entry = archive.Entries.FirstOrDefault(x => (x.FullName ?? x.Name) == ComicInfoFilename) ??
-                        archive.Entries.FirstOrDefault(x => IsComicInfoArchiveEntry(x.FullName, x.Name));
-                    if (entry != null)
                     {
-                        using var stream = entry.Open();
-                        return Deserialize(stream);
-                    }
+                        using var archive = ZipFile.OpenRead(archivePath);
 
-                    break;
-                }
+                        var entry = archive.Entries.FirstOrDefault(x => (x.FullName ?? x.Name) == ComicInfoFilename) ??
+                            archive.Entries.FirstOrDefault(x => IsComicInfoArchiveEntry(x.FullName, x.Name));
+                        if (entry != null)
+                        {
+                            using var stream = entry.Open();
+                            return Deserialize(stream);
+                        }
+
+                        break;
+                    }
                 case ArchiveLibrary.SharpCompress:
-                {
-                    using var archive = ArchiveFactory.Open(archivePath);
-                    var entry = archive.Entries.FirstOrDefault(entry => entry.Key == ComicInfoFilename) ??
-                        archive.Entries.FirstOrDefault(entry =>
-                        IsComicInfoArchiveEntry(Path.GetDirectoryName(entry.Key), entry.Key));
-
-                    if (entry != null)
                     {
-                        using var stream = entry.OpenEntryStream();
-                        var info = Deserialize(stream);
-                        return info;
-                    }
+                        using var archive = ArchiveFactory.Open(archivePath);
+                        var entry = archive.Entries.FirstOrDefault(entry => entry.Key == ComicInfoFilename) ??
+                            archive.Entries.FirstOrDefault(entry =>
+                            IsComicInfoArchiveEntry(Path.GetDirectoryName(entry.Key), entry.Key));
 
-                    break;
-                }
+                        if (entry != null)
+                        {
+                            using var stream = entry.OpenEntryStream();
+                            var info = Deserialize(stream);
+                            return info;
+                        }
+
+                        break;
+                    }
                 case ArchiveLibrary.NotSupported:
                     _logger.LogWarning("[GetComicInfo] This archive cannot be read: {ArchivePath}", archivePath);
                     return null;
@@ -485,6 +485,18 @@ public class ArchiveService : IArchiveService
             _logger.LogWarning(ex, "[GetComicInfo] There was an exception when reading archive stream: {Filepath}", archivePath);
             _mediaErrorService.ReportMediaIssue(archivePath, MediaErrorProducer.ArchiveService,
                 "This archive cannot be read or not supported", ex);
+        }
+
+        var file = _directoryService.FileSystem.FileInfo.New(archivePath);
+        var comicInfoPath = _directoryService.FileSystem.FileInfo.New(
+            _directoryService.FileSystem.Path.Join(
+                file.DirectoryName,
+                $"{_directoryService.FileSystem.Path.GetFileNameWithoutExtension(file.Name)}.{ComicInfoFilename}"
+            ));
+        if (comicInfoPath.Exists)
+        {
+            using var stream = comicInfoPath.OpenRead();
+            return Deserialize(stream);
         }
 
         return null;
@@ -567,19 +579,19 @@ public class ArchiveService : IArchiveService
             switch (libraryHandler)
             {
                 case ArchiveLibrary.Default:
-                {
-                    using var archive = ZipFile.OpenRead(archivePath);
-                    ExtractArchiveEntries(archive, extractPath);
-                    break;
-                }
+                    {
+                        using var archive = ZipFile.OpenRead(archivePath);
+                        ExtractArchiveEntries(archive, extractPath);
+                        break;
+                    }
                 case ArchiveLibrary.SharpCompress:
-                {
-                    using var archive = ArchiveFactory.Open(archivePath);
-                    ExtractArchiveEntities(archive.Entries.Where(entry => !entry.IsDirectory
-                                                                          && !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(Path.GetDirectoryName(entry.Key) ?? string.Empty)
-                                                                          && Tasks.Scanner.Parser.Parser.IsImage(entry.Key)), extractPath);
-                    break;
-                }
+                    {
+                        using var archive = ArchiveFactory.Open(archivePath);
+                        ExtractArchiveEntities(archive.Entries.Where(entry => !entry.IsDirectory
+                                                                              && !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(Path.GetDirectoryName(entry.Key) ?? string.Empty)
+                                                                              && Tasks.Scanner.Parser.Parser.IsImage(entry.Key)), extractPath);
+                        break;
+                    }
                 case ArchiveLibrary.NotSupported:
                     _logger.LogWarning("[ExtractArchive] This archive cannot be read: {ArchivePath}", archivePath);
                     return;

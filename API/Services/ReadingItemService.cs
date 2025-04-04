@@ -59,9 +59,14 @@ public class ReadingItemService : IReadingItemService
             return _bookService.GetComicInfo(filePath);
         }
 
-        if (Parser.IsComicInfoExtension(filePath))
+        if (Parser.IsArchive(filePath))
         {
             return _archiveService.GetComicInfo(filePath);
+        }
+
+        if (Parser.IsImage(filePath))
+        {
+            return _imageService.GetComicInfo(filePath);
         }
 
         return null;
